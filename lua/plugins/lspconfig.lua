@@ -12,7 +12,7 @@ return {
           local keymap = vim.keymap.set
 
           keymap("n", "K", vim.lsp.buf.hover, opts)
-          keymap("n", "<C-k>", vim.lsp.buf.signature_help, opts)
+          -- keymap("n", "<C-k>", vim.lsp.buf.signature_help, opts)
 
           keymap("n", "gd", vim.lsp.buf.definition, opts)
           keymap("n", "gD", vim.lsp.buf.declaration, opts)
