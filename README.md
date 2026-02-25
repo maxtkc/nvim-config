@@ -55,3 +55,22 @@ set -g @plugin 'tmux-plugins/tmux-sensible'
 # Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
 run '~/.tmux/plugins/tpm/tpm'
 ```
+
+## keyd for swap escape
+
+```
+[ids]
+
+*
+
+[main]
+
+# Maps capslock to escape when pressed and control when held.
+capslock = overload(control, esc)
+
+# Remaps the escape key to capslock
+esc = capslock
+
+# Remap < key to shift for german keyboards
+# 102nd = overload(shift, <)
+```
