@@ -4,7 +4,7 @@ return   {
         build = ":TSUpdate",
         branch = "main",
         opts = {
-            ensure_installed = { "python", "lua", "vim" },
+            ensure_installed = { "python", "lua", "vim", "hcl" },
             highlight = { enable = true },
         },
     },
