@@ -10,7 +10,7 @@ return {
     dependencies = { "williamboman/mason.nvim" },
     config = function()
       require("mason-tool-installer").setup({
-        ensure_installed = { "pyright", "ruff", "black", "isort" },
+        ensure_installed = { "pyright", "ruff", "black", "isort", "terraform-ls" },
         run_on_start = true,
         auto_update = false,
       })

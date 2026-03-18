@@ -101,7 +101,7 @@ set -g @plugin 'tmux-plugins/tmux-sensible'
 run '~/.tmux/plugins/tpm/tpm'
 ```
 
-## keyd for swap escape
+## keyd for swap escape `/etc/keyd/default.conf`
 
 ```
 [ids]

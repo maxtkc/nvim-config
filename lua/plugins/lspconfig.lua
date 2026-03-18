@@ -40,6 +40,7 @@ return {
       -- lspconfig provides cmd/filetypes/root_markers; vim.lsp.enable activates them
       vim.lsp.enable("pyright")
       vim.lsp.enable("ruff")
+      vim.lsp.enable("terraformls")
     end,
   },
 }
