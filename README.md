@@ -7,6 +7,43 @@
 > - Use it everywhere
 > - Don't spend hours configuring nvim lol
 
+## Git keybindings (gitsigns)
+
+**Navigation**
+
+| Key | Action |
+|-----|--------|
+| `]c` | Next hunk |
+| `[c` | Previous hunk |
+
+**Viewing diffs**
+
+| Key | Action |
+|-----|--------|
+| `<leader>hp` | Preview hunk (floating window) |
+| `<leader>hi` | Preview hunk inline |
+| `<leader>hd` | Diff this file vs index |
+| `<leader>hD` | Diff this file vs last commit |
+
+**Blame**
+
+| Key | Action |
+|-----|--------|
+| `<leader>hb` | Blame current line (full) |
+| `<leader>tb` | Toggle inline blame |
+| `<leader>tw` | Toggle word diff |
+
+**Staging / resetting**
+
+| Key | Action |
+|-----|--------|
+| `<leader>hs` | Stage hunk (normal or visual) |
+| `<leader>hr` | Reset hunk (normal or visual) |
+| `<leader>hS` | Stage buffer |
+| `<leader>hR` | Reset buffer |
+| `<leader>hq` | Send hunks to quickfix |
+| `<leader>hQ` | Send all hunks to quickfix |
+
 ## Corresponding tmux.conf
 
 ```
@@ -24,6 +61,14 @@ set -sg escape-time 10
 
 # Set current session to CWD with alt-c
 bind -n M-c attach-session -t . -c '#{pane_current_path}'
+
+# Reload config
+bind r source-file ~/.tmux.conf
+
+# Open splits/windows in current directory
+bind '"' split-window -c "#{pane_current_path}"
+bind % split-window -h -c "#{pane_current_path}"
+bind c new-window -c "#{pane_current_path}"
 
 # From https://github.com/aserowy/tmux.nvim
 is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?\.?(view|n?vim?x?)(-wrapped)?(diff)?$'"

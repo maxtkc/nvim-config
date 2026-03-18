@@ -12,6 +12,7 @@ return {
 
       -- Setup CopilotChat
       require("CopilotChat").setup({
+        model = "claude-sonnet-4.5",
         panel = {
           enabled = true,
         },
