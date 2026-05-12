@@ -1,0 +1,199 @@
+#!/usr/bin/env python3
+"""Claude Code status bar: model | session time+% | week time+% | context %"""
+import json
+import subprocess
+import sys
+import time
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+
+GREEN = '\033[32m'
+YELLOW = '\033[33m'
+RED = '\033[31m'
+RESET = '\033[0m'
+
+CREDENTIALS_FILE = Path.home() / '.claude' / '.credentials.json'
+CACHE_FILE = Path.home() / '.claude' / 'cache' / 'usage-api.json'
+CACHE_TTL = 60  # seconds
+
+
+def color(pct):
+    if pct >= 90:
+        return RED
+    if pct >= 70:
+        return YELLOW
+    return GREEN
+
+
+def linear_delta(utilization_pct, resets_at_iso, period_seconds):
+    """Return how many % points over (+) or under (-) linear burn rate."""
+    try:
+        resets_at = datetime.fromisoformat(resets_at_iso)
+        now = datetime.now(timezone.utc)
+        secs_left = max(0, (resets_at - now).total_seconds())
+        secs_elapsed = period_seconds - secs_left
+        if period_seconds <= 0 or secs_elapsed <= 0:
+            return 0
+        expected_pct = (secs_elapsed / period_seconds) * 100
+        return round(utilization_pct - expected_pct)
+    except Exception:
+        return 0
+
+
+def fmt_time_until(iso_str):
+    try:
+        resets_at = datetime.fromisoformat(iso_str)
+        now = datetime.now(timezone.utc)
+        secs = max(0, (resets_at - now).total_seconds())
+        m = int(secs / 60)
+        if m >= 1440:
+            d = m // 1440
+            h = (m % 1440) // 60
+            return f"{d}d{h:02d}h{m % 60:02d}m"
+        if m >= 60:
+            return f"{m // 60}h{m % 60:02d}m"
+        return f"{m}m"
+    except Exception:
+        return "?"
+
+
+def read_stdin():
+    if not sys.stdin.isatty():
+        try:
+            return json.loads(sys.stdin.read())
+        except Exception:
+            pass
+    return {}
+
+
+def load_cached():
+    try:
+        data = json.loads(CACHE_FILE.read_text())
+        if time.time() - data.get('_fetched_at', 0) < CACHE_TTL:
+            return data
+    except Exception:
+        pass
+    return None
+
+
+def save_cache(data):
+    try:
+        CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        CACHE_FILE.write_text(json.dumps(data))
+    except Exception:
+        pass
+
+
+def fetch_usage():
+    cached = load_cached()
+    if cached:
+        return cached
+
+    try:
+        creds = json.loads(CREDENTIALS_FILE.read_text())
+        token = creds['claudeAiOauth']['accessToken']
+    except Exception:
+        return None
+
+    try:
+        req = urllib.request.Request(
+            'https://api.anthropic.com/api/oauth/usage',
+            headers={
+                'Authorization': f'Bearer {token}',
+                'anthropic-beta': 'oauth-2025-04-20',
+            },
+        )
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = json.loads(r.read().decode())
+            data['_fetched_at'] = time.time()
+            save_cache(data)
+            return data
+    except Exception:
+        return None
+
+
+def get_git_info():
+    try:
+        result = subprocess.run(
+            ['git', 'status', '--porcelain=v2', '--branch'],
+            capture_output=True, text=True, timeout=2,
+        )
+        if result.returncode != 0:
+            return None
+        branch = 'HEAD'
+        staged = modified = untracked = 0
+        for line in result.stdout.splitlines():
+            if line.startswith('# branch.head '):
+                branch = line[len('# branch.head '):]
+            elif line.startswith('1 ') or line.startswith('2 '):
+                xy = line[2:4]
+                if xy[0] != '.':
+                    staged += 1
+                if xy[1] != '.':
+                    modified += 1
+            elif line.startswith('? '):
+                untracked += 1
+        counts = []
+        if modified:
+            counts.append(f'~{modified}')
+        if staged:
+            counts.append(f'+{staged}')
+        if untracked:
+            counts.append(f'?{untracked}')
+        return f"{branch} [{' '.join(counts)}]" if counts else branch
+    except Exception:
+        return None
+
+
+def main():
+    stdin = read_stdin()
+    ctx_pct = round((stdin.get('context_window') or {}).get('used_percentage') or 0)
+    model = (stdin.get('model') or {}).get('display_name') or ''
+
+    if not model:
+        try:
+            settings = json.loads((Path.home() / '.claude' / 'settings.json').read_text())
+            model = settings.get('model', 'unknown')
+        except Exception:
+            model = 'unknown'
+
+    usage = fetch_usage()
+
+    if usage:
+        five_hour = usage.get('five_hour') or {}
+        seven_day = usage.get('seven_day') or {}
+        sess_pct = round(five_hour.get('utilization') or 0)
+        week_pct = round(seven_day.get('utilization') or 0)
+        sess_time = fmt_time_until(five_hour.get('resets_at', ''))
+        week_time = fmt_time_until(seven_day.get('resets_at', ''))
+        sess_delta = linear_delta(sess_pct, five_hour.get('resets_at', ''), 5 * 3600)
+        week_delta = linear_delta(week_pct, seven_day.get('resets_at', ''), 7 * 24 * 3600)
+    else:
+        sess_pct = week_pct = 0
+        sess_time = week_time = '?'
+        sess_delta = week_delta = 0
+
+    def fmt_delta(d):
+        s = f"+{d}" if d > 0 else str(d)
+        c = RED if d > 0 else GREEN
+        return f"{c}({s}){RESET}"
+
+    c_sess = color(sess_pct)
+    c_week = color(week_pct)
+    c_ctx = color(ctx_pct)
+    R = RESET
+
+    git = get_git_info()
+    parts = [
+        *([ git ] if git else []),
+        f"{c_ctx}ctx {ctx_pct}%{R}",
+        f"{c_sess}{sess_time} sess {sess_pct}%{R} {fmt_delta(sess_delta)}",
+        f"{c_week}{week_time} week {week_pct}%{R} {fmt_delta(week_delta)}",
+        model,
+    ]
+    print(" | ".join(parts))
+
+
+if __name__ == '__main__':
+    main()

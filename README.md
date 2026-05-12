@@ -50,6 +50,20 @@ Config lives in [`tmux.conf`](tmux.conf). Run `./install.sh` to symlink it to `~
 
 After installing, load plugins inside tmux with `prefix + I`.
 
+## claude-status
+
+[`claude-status`](claude-status) is a Python status-line script for Claude Code. It shows git branch + dirty counts, context %, 5-hour session usage, 7-day usage (each with a `+N` / `-N` linear-burn delta), and the active model.
+
+`./install.sh` symlinks it to `~/.local/bin/claude-status` and sets `statusLine` in `~/.claude/settings.json` to:
+
+```json
+{
+  "statusLine": { "type": "command", "command": "claude-status" }
+}
+```
+
+Requires `~/.local/bin` on `PATH` and `python3`. Usage data is pulled from the OAuth usage API using the token in `~/.claude/.credentials.json` and cached for 60s at `~/.claude/cache/usage-api.json`.
+
 ## keyd for swap escape `/etc/keyd/default.conf`
 
 ```
