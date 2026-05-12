@@ -34,7 +34,6 @@ return {
           ["<S-Tab>"] = function(fallback) fallback() end,
         },
         sources = {
-          { name = "copilot" },
           { name = "nvim_lsp" },
           { name = "luasnip" },
         },

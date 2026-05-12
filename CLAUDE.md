@@ -31,7 +31,7 @@ Lazy.nvim auto-discovers all files in `lua/plugins/`. No registration step neede
 
 - **LSP servers**: Pyright (type checking) + Ruff (linting/formatting), configured in `lua/plugins/lspconfig.lua`
 - **Installer**: Mason + mason-tool-installer auto-installs Pyright, Ruff, black, and isort (`lua/plugins/mason.lua`)
-- **Completion**: nvim-cmp with LSP + Copilot sources (`lua/plugins/cmp.lua`)
+- **Completion**: nvim-cmp with LSP + snippet sources (`lua/plugins/cmp.lua`)
 - **Treesitter parsers**: Python, Lua, Vim (`lua/plugins/treesitter.lua`)
 
 Uses Neovim 0.11's native `vim.lsp.enable()` API (not the deprecated `require('lspconfig').X.setup()` framework). LSP keymaps are set via a `LspAttach` autocmd. nvim-lspconfig is still used as the source of server definitions (cmd, filetypes, root_markers).
@@ -51,11 +51,6 @@ To add a new LSP server: add it to `ensure_installed` in `mason.lua` and call `v
 | `<leader>f` | Format document |
 | `<leader>e` | Diagnostics float |
 | `[d` / `]d` | Previous / next diagnostic |
-| `<leader>c` | Toggle CopilotChat |
-
-## Copilot
-
-- Inline suggestions and panel are **disabled** by default; Copilot surfaces only through nvim-cmp completions and CopilotChat (`<leader>c`).
 
 ## Lock File
 
